@@ -1,0 +1,11 @@
+services:
+  init_subscriber:
+    class: Drupal\bible\EventSubscriber\InitSubscriber
+    tags:
+      -
+        name: event_subscriber
+  boot_subscriber:
+    class: Drupal\bible\EventSubscriber\BootSubscriber
+    tags:
+      -
+        name: event_subscriber

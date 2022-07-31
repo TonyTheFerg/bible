@@ -1,0 +1,33 @@
+Indexing...
+done.
+ [warning] bible_block_configure cannot be executed because it contains logic.
+ [warning] bible_block_save cannot be executed because it contains logic.
+ [warning] bible_block_view cannot be executed because it contains logic.
+ [error]  Error at line 18:7: expected T_STRING 
+ [notice] #0 /var/www/html/vendor/jcnventura/pharborist/src/Parser.php(2432): Pharborist\Parser->mustMatch(311, Object(Pharborist\Namespaces\NameNode), NULL, true)
+#1 /var/www/html/vendor/jcnventura/pharborist/src/Parser.php(341): Pharborist\Parser->classDeclaration()
+#2 /var/www/html/vendor/jcnventura/pharborist/src/Parser.php(2352): Pharborist\Parser->topStatement()
+#3 /var/www/html/vendor/jcnventura/pharborist/src/Parser.php(2336): Pharborist\Parser->namespaceBlock()
+#4 /var/www/html/vendor/jcnventura/pharborist/src/Parser.php(359): Pharborist\Parser->_namespace()
+#5 /var/www/html/vendor/jcnventura/pharborist/src/Parser.php(321): Pharborist\Parser->topStatement()
+#6 /var/www/html/vendor/jcnventura/pharborist/src/Parser.php(202): Pharborist\Parser->topStatementList(Object(Pharborist\RootNode))
+#7 /var/www/html/vendor/jcnventura/pharborist/src/Parser.php(240): Pharborist\Parser->buildTree(Object(Pharborist\TokenIterator))
+#8 /var/www/html/vendor/jcnventura/pharborist/src/Parser.php(250): Pharborist\Parser::parseSource('<?php /**\n * @f...')
+#9 /var/www/html/web/modules/contrib/drupalmoduleupgrader/src/ConverterBase.php(199): Pharborist\Parser::parseSnippet(Object(Drupal\Core\Render\Markup))
+#10 /var/www/html/web/modules/contrib/drupalmoduleupgrader/src/Plugin/DMU/Converter/Blocks.php(62): Drupal\drupalmoduleupgrader\ConverterBase->parse(Object(Drupal\Core\Render\Markup))
+#11 /var/www/html/web/modules/contrib/drupalmoduleupgrader/src/Commands/DrupalmoduleupgraderCommands.php(188): Drupal\drupalmoduleupgrader\Plugin\DMU\Converter\Blocks->convert(Object(Drupal\drupalmoduleupgrader\Target))
+#12 [internal function]: Drupal\drupalmoduleupgrader\Commands\DrupalmoduleupgraderCommands->upgrade('bible', Array)
+#13 /var/www/html/vendor/consolidation/annotated-command/src/CommandProcessor.php(257): call_user_func_array(Array, Array)
+#14 /var/www/html/vendor/consolidation/annotated-command/src/CommandProcessor.php(212): Consolidation\AnnotatedCommand\CommandProcessor->runCommandCallback(Array, Object(Consolidation\AnnotatedCommand\CommandData))
+#15 /var/www/html/vendor/consolidation/annotated-command/src/CommandProcessor.php(176): Consolidation\AnnotatedCommand\CommandProcessor->validateRunAndAlter(Array, Array, Object(Consolidation\AnnotatedCommand\CommandData))
+#16 /var/www/html/vendor/consolidation/annotated-command/src/AnnotatedCommand.php(350): Consolidation\AnnotatedCommand\CommandProcessor->process(Object(Symfony\Component\Console\Output\ConsoleOutput), Array, Array, Object(Consolidation\AnnotatedCommand\CommandData))
+#17 /var/www/html/vendor/symfony/console/Command/Command.php(255): Consolidation\AnnotatedCommand\AnnotatedCommand->execute(Object(Drush\Symfony\DrushArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#18 /var/www/html/vendor/symfony/console/Application.php(1027): Symfony\Component\Console\Command\Command->run(Object(Drush\Symfony\DrushArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#19 /var/www/html/vendor/symfony/console/Application.php(273): Symfony\Component\Console\Application->doRunCommand(Object(Consolidation\AnnotatedCommand\AnnotatedCommand), Object(Drush\Symfony\DrushArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#20 /var/www/html/vendor/symfony/console/Application.php(149): Symfony\Component\Console\Application->doRun(Object(Drush\Symfony\DrushArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#21 /var/www/html/vendor/drush/drush/src/Runtime/Runtime.php(118): Symfony\Component\Console\Application->run(Object(Drush\Symfony\DrushArgvInput), Object(Symfony\Component\Console\Output\ConsoleOutput))
+#22 /var/www/html/vendor/drush/drush/src/Runtime/Runtime.php(48): Drush\Runtime\Runtime->doRun(Array, Object(Symfony\Component\Console\Output\ConsoleOutput))
+#23 /var/www/html/vendor/drush/drush/drush.php(72): Drush\Runtime\Runtime->run(Array)
+#24 /var/www/html/vendor/drush/drush/drush(3): require('/var/www/html/v...')
+#25 /var/www/html/vendor/bin/drush(112): include('/var/www/html/v...')
+#26 {main}

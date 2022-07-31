@@ -13,12 +13,12 @@ function theme_bible_multiread($variables) {
   $rows = array();
   foreach ($form['bible'] as $key => $element) {
     // Do not take form control structures.
-    if (is_array($element) && element_child($key)) {
+    if (is_array($element) && \Drupal\Core\Render\Element::child($key)) {
       $rows[] = array(
-        check_plain($key),
+        \Drupal\Component\Utility\Html::escape($key),
         $form['bible'][$key]['#value'],
-        drupal_render($form['enabled'][$key]),
-        drupal_render($form['bible_default'][$key]),
+        \Drupal::service("renderer")->render($form['enabled'][$key]),
+        \Drupal::service("renderer")->render($form['bible_default'][$key]),
       );
     }
   }
@@ -30,7 +30,16 @@ function theme_bible_multiread($variables) {
     ),
     array('data' => t('Base Bible')),
   );
-  $output = theme('table', array('header' => $header, 'rows' => $rows));
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output = theme('table', array('header' => $header, 'rows' => $rows));
+
   $output .= drupal_render_children($form);
   return $output;
 }
@@ -45,23 +54,32 @@ function theme_bible_breadcrumb($variables) {
   $page_content = '<div class="bible-breadcrumb">';
    $bname = _bible_get_bible_name($default_bible);
   if (!empty($bibles_)) {
-    $page_content .= l($bname, 'bible/' . $bibles_);
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $page_content .= l($bname, 'bible/' . $bibles_);
+
   }
   $cname = '';
   if (!empty($book)) {
     $cname = _bible_get_chapter_name($default_bible, $book);
-    $page_content .= ' &raquo; ' . l(
-      $cname,
-      'bible/' . $bibles_ . '/' . $book
-    );
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $page_content .= ' &raquo; ' . l(
+//       $cname,
+//       'bible/' . $bibles_ . '/' . $book
+//     );
+
   }
   $chapname = '';
   if (!empty($chapter)) {
     $chapname = t('Chapter @chap', array('@chap' => $chapter));
-    $page_content .= ' &raquo; '. l(
-      $chapname,
-      'bible/' . $bibles_ . '/' . $book . '/' . $chapter
-    );
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $page_content .= ' &raquo; '. l(
+//       $chapname,
+//       'bible/' . $bibles_ . '/' . $book . '/' . $chapter
+//     );
+
   }
   $page_content .= '</div>';
   $title = $cname . ' ' . $chapname;
@@ -71,7 +89,14 @@ function theme_bible_breadcrumb($variables) {
   if (trim($title) === '') {
     $title = t('Bible');
   }
-  drupal_set_title($title);
+  // @FIXME
+// drupal_set_title() has been removed. There are now a few ways to set the title
+// dynamically, depending on the situation.
+// 
+// 
+// @see https://www.drupal.org/node/2067859
+// drupal_set_title($title);
+
 
   return $page_content;
 }
@@ -98,32 +123,38 @@ function theme_bible_chapter($variables) {
       _bible_get_prevnextchap($book . ':' . $chapter, $bibles[0])
     );
     $bibles_ = implode('_', $bibles);
-    $pnline1 = '&#171;' . l(
-      $pnchap[2] . ' ' . t('Chapter @chap', array(
-        '@chap' => $pnchap[1],
-      )),
-      'bible/' . $bibles_ . '/' . $pnchap[0] . '/' . $pnchap[1]
-    );
-    $pnline2 = l(
-      $pnchap[5] . ' ' . t('Chapter @chap', array(
-        '@chap' => $pnchap[4],
-      )),
-      'bible/' . $bibles_ . '/' . $pnchap[3] . '/' . $pnchap[4]
-    ) . '&#187;';
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $pnline1 = '&#171;' . l(
+//       $pnchap[2] . ' ' . t('Chapter @chap', array(
+//         '@chap' => $pnchap[1],
+//       )),
+//       'bible/' . $bibles_ . '/' . $pnchap[0] . '/' . $pnchap[1]
+//     );
+
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $pnline2 = l(
+//       $pnchap[5] . ' ' . t('Chapter @chap', array(
+//         '@chap' => $pnchap[4],
+//       )),
+//       'bible/' . $bibles_ . '/' . $pnchap[3] . '/' . $pnchap[4]
+//     ) . '&#187;';
+
   }
 
   // Output chapter content.
   $page_content .= '<dl class="bible-chapter-content">';
   $curverse = 0;
   $bbpos = 0;
-  global $user;
+  $user = \Drupal::currentUser();
   foreach ($chapter_data as $verse) {
     if ($verse->linemark == '*') {
-      $page_content .= '<dt class="header">' . check_plain($verse->context) .
+      $page_content .= '<dt class="header">' . \Drupal\Component\Utility\Html::escape($verse->context) .
         '&nbsp;</dt>';
     }
     else {
-      $showchapternumber = variable_get('bible_config_showchapternumber', 0);
+      $showchapternumber = \Drupal::config('bible.settings')->get('bible_config_showchapternumber');
       $verse_ = ($showchapternumber ? $verse->chapter . ':' : '') .
         $verse->verse;
       $page_content .= '<span';
@@ -165,23 +196,26 @@ function theme_bible_chapter($variables) {
       }
       $page_content .= '><dd class="bible-context-' . ($bbpos % 7) . '">';
       if ($ismulti) {
-        $multireadbiblename = variable_get('bible_config_multireadbiblename', 0);
+        $multireadbiblename = \Drupal::config('bible.settings')->get('bible_config_multireadbiblename');
         if ($multireadbiblename) {
           $page_content .= '(<b>' .
-            check_plain($biblename[$bibles[$bbpos]]) . '</b>) ';
+            \Drupal\Component\Utility\Html::escape($biblename[$bibles[$bbpos]]) . '</b>) ';
         }
       }
-      $page_content .= _bible_sn_replace(check_plain($verse->context));
+      $page_content .= _bible_sn_replace(\Drupal\Component\Utility\Html::escape($verse->context));
 
       if (isset($versemask[$verse->verse]['refverse']) && $versemask[$verse->verse]['refverse'] !== '') {
         $refverse = $versemask[$verse->verse]['refverse'];
         global $imagedir;
         $idname = 'refverse_' . $verse->verse;
-        $page_content .= '<a href="' . url('bible/refverse/') . $bls .
-          '/' . $bibles_ . '"><span class="bls" id="' . $idname .
-          '" width="100px;"><img src="' . $imagedir .
-          'refverse.gif" /></span></a><span class="popup" id="popup-' .
-          $idname . '" style="position:absolute;visibility:hidden;">';
+        // @FIXME
+// url() expects a route name or an external URI.
+// $page_content .= '<a href="' . url('bible/refverse/') . $bls .
+//           '/' . $bibles_ . '"><span class="bls" id="' . $idname .
+//           '" width="100px;"><img src="' . $imagedir .
+//           'refverse.gif" /></span></a><span class="popup" id="popup-' .
+//           $idname . '" style="position:absolute;visibility:hidden;">';
+
         $data = explode(';', $refverse);
         $rvline = '';
         foreach ($data as $bls) {
@@ -221,7 +255,7 @@ function theme_bible_chapter($variables) {
     $page_content .= '<ul class="bible-color-mark-list">';
     for ($i = 0; $i < count($bibles); $i++) {
       $page_content .= '<li class="bible-context-' . $i . '">' .
-        check_plain(_bible_get_bible_name($bibles[$i])) . '</li>';
+        \Drupal\Component\Utility\Html::escape(_bible_get_bible_name($bibles[$i])) . '</li>';
     }
     $page_content .= '</ul>';
   }
@@ -263,57 +297,72 @@ function theme_bible_chapter_data($variables) {
       $rows = array();
       $page_content .= '<fieldset><legend>' . $name . '</legend>';
       foreach ($domXPath->query('//bibledata/' . $li . '/data') as $keyDOM) {
-        $did = check_plain($keyDOM->getAttribute('did'));
+        $did = \Drupal\Component\Utility\Html::escape($keyDOM->getAttribute('did'));
         $datalink = '<img src="' . $imagedir . $li . '.gif" />';
-        $datalink .= l(
-          $keyDOM->textContent,
-          BIBLE_DATA_DEFAULT_URL . '/fwd/' . $did,
-          array('attributes' => array('target' => 'bibledata'))
-        );
-        $resplink = l(
-          '<img src="' . $imagedir . 'recommend.gif">',
-          BIBLE_DATA_DEFAULT_URL . '/rec/' . $did,
-          array(
-            'html' => TRUE,
-            'attributes' => array(
-              'title' => t('Recommend this bible data.'),
-              'target' => 'bibledata',
-            ),
-          )
-        );
-        $resplink .= l(
-          '<img src="' . $imagedir . 'opposite.gif">',
-          BIBLE_DATA_DEFAULT_URL . '/opp/' . $did,
-          array(
-            'html' => TRUE,
-            'attributes' => array(
-              'title' => t('Opposite this bible data.'),
-              'target' => 'bibledata',
-            ),
-          )
-        );
-        $resplink .= l(
-          '<img src="' . $imagedir . 'link-broken.gif">',
-          BIBLE_DATA_DEFAULT_URL . '/linkbrk/' . $did,
-          array(
-            'html' => TRUE,
-            'attributes' => array(
-              'title' => t('Report this data link borken.'),
-              'target' => 'bibledata',
-            ),
-          )
-        );
-        $resplink .= l(
-          '<img src="' . $imagedir . 'unfit.gif">',
-          BIBLE_DATA_DEFAULT_URL . '/unfit/' . $did,
-          array(
-            'html' => TRUE,
-            'attributes' => array(
-              'title' => t('Report this data content unfit.'),
-              'target' => 'bibledata',
-            ),
-          )
-        );
+        // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $datalink .= l(
+//           $keyDOM->textContent,
+//           BIBLE_DATA_DEFAULT_URL . '/fwd/' . $did,
+//           array('attributes' => array('target' => 'bibledata'))
+//         );
+
+        // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $resplink = l(
+//           '<img src="' . $imagedir . 'recommend.gif">',
+//           BIBLE_DATA_DEFAULT_URL . '/rec/' . $did,
+//           array(
+//             'html' => TRUE,
+//             'attributes' => array(
+//               'title' => t('Recommend this bible data.'),
+//               'target' => 'bibledata',
+//             ),
+//           )
+//         );
+
+        // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $resplink .= l(
+//           '<img src="' . $imagedir . 'opposite.gif">',
+//           BIBLE_DATA_DEFAULT_URL . '/opp/' . $did,
+//           array(
+//             'html' => TRUE,
+//             'attributes' => array(
+//               'title' => t('Opposite this bible data.'),
+//               'target' => 'bibledata',
+//             ),
+//           )
+//         );
+
+        // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $resplink .= l(
+//           '<img src="' . $imagedir . 'link-broken.gif">',
+//           BIBLE_DATA_DEFAULT_URL . '/linkbrk/' . $did,
+//           array(
+//             'html' => TRUE,
+//             'attributes' => array(
+//               'title' => t('Report this data link borken.'),
+//               'target' => 'bibledata',
+//             ),
+//           )
+//         );
+
+        // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $resplink .= l(
+//           '<img src="' . $imagedir . 'unfit.gif">',
+//           BIBLE_DATA_DEFAULT_URL . '/unfit/' . $did,
+//           array(
+//             'html' => TRUE,
+//             'attributes' => array(
+//               'title' => t('Report this data content unfit.'),
+//               'target' => 'bibledata',
+//             ),
+//           )
+//         );
+
         $rows[] = array(
           $datalink,
           array(
@@ -322,7 +371,16 @@ function theme_bible_chapter_data($variables) {
           ),
         );
       }
-      $page_content .= theme('table', array('rows' => $rows));
+      // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $page_content .= theme('table', array('rows' => $rows));
+
       $page_content .= '</fieldset>';
     }
   }
@@ -337,10 +395,13 @@ function theme_bible_select_chapter($variables) {
   $page_content = '<h3 class="title">' . t("Select Chapter") . '</h3>';
   $page_content .= '<ul class="bible-chapter-list">';
   for ($i = 1; $i <= $book_data->chap; $i++) {
-    $page_content .= '<li>' . l(
-      $i,
-      'bible/' . $bibles_ . '/' . $book . '/' . $i
-    ) . '</li>';
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $page_content .= '<li>' . l(
+//       $i,
+//       'bible/' . $bibles_ . '/' . $book . '/' . $i
+//     ) . '</li>';
+
   }
   $page_content .= '</ul><br />';
   return $page_content;
@@ -355,11 +416,14 @@ function theme_bible_select_book($variables) {
     if ($lastbook == 'MAL' || $lastbook == 'REV') {
       $booklines .= '|';
     }
-    $book = check_plain($qr->book);
-    $booklines .= '<span class="book ' . drupal_html_class('book-' . $book) .
-      '">' .
-      l(check_plain($qr->fname), 'bible/' . $bibles_ . '/' . $book) .
-      '</span>';
+    $book = \Drupal\Component\Utility\Html::escape($qr->book);
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $booklines .= '<span class="book ' . drupal_html_class('book-' . $book) .
+//       '">' .
+//       l(check_plain($qr->fname), 'bible/' . $bibles_ . '/' . $book) .
+//       '</span>';
+
     $lastbook = $qr->book;
   }
   $bookline = explode('|', $booklines);
@@ -394,7 +458,16 @@ function theme_bible_select_book($variables) {
       'class' => array('apocrypha'),
     );
   }
-  $page_content .= theme('table', array('header' => $header, 'rows'=> $rows));
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $page_content .= theme('table', array('header' => $header, 'rows'=> $rows));
+
   $page_content .= '</div>';
   return $page_content;
 }
@@ -403,12 +476,15 @@ function theme_bible_links($variables) {
   $bibles = $variables['bibles'];
   $bible_count = $variables['bible_count'];
   $page_content = '<hr /><div class="bible-links"><ul class="links inline">';
-  $arg2 = check_plain(arg(2));
-  $arg3 = check_plain(arg(3));
+  $arg2 = \Drupal\Component\Utility\Html::escape(arg(2));
+  $arg3 = \Drupal\Component\Utility\Html::escape(arg(3));
   if (count($bibles) == 1) {
     if ($bible_count > 1) {
       $biblelist = _bible_get_bible_list();
-      $href = "'" . url('bible') . "/'+this.value";
+      // @FIXME
+// url() expects a route name or an external URI.
+// $href = "'" . url('bible') . "/'+this.value";
+
       $hrefpara = (!empty($arg2) ? '/' . $arg2 : '') .
         (!empty($arg3) ? '/' . $arg3 : '');
       if ($hrefpara !== '') {
@@ -426,12 +502,15 @@ function theme_bible_links($variables) {
         if ($bid == arg(1)) {
           $page_content .= ' selected="selected"';
         }
-        $page_content .= '>' . check_plain($bb) . '</option>';
+        $page_content .= '>' . \Drupal\Component\Utility\Html::escape($bb) . '</option>';
       }
       $page_content .= '</select></li>';
     }
     if (arg(1) !== '') {
-      $href = "'" . url('bible') . '/' . arg(1) . "/'+this.value";
+      // @FIXME
+// url() expects a route name or an external URI.
+// $href = "'" . url('bible') . '/' . arg(1) . "/'+this.value";
+
       $href .= (!empty($arg3) ? "+'/" . $arg3 . "';" : '');
       $page_content .= '<li class="book-selector">';
       $page_content .= '<select onchange="location.href=' . $href .
@@ -439,24 +518,27 @@ function theme_bible_links($variables) {
       // No need to check_plain(arg(1)), as the underlying code handles both
       // numeric and string cases properly.
       $bid = _bible_get_bible_id_number(arg(1));
-      $book_data = db_select('bible_book_name', 'bbn')
+      $book_data = \Drupal::database()->select('bible_book_name', 'bbn')
         ->fields('bbn')
         ->condition('bid', $bid)
         ->orderBy('bkid')
         ->execute();
       foreach ($book_data as $qr) {
-        $page_content .= '<option value="' . check_plain($qr->book) . '"';
+        $page_content .= '<option value="' . \Drupal\Component\Utility\Html::escape($qr->book) . '"';
         if (!empty($arg2) && $qr->book == $arg2) {
           $page_content .= ' selected="selected"';
         }
-        $page_content .= '>' . check_plain($qr->fname) . '</option>';
+        $page_content .= '>' . \Drupal\Component\Utility\Html::escape($qr->fname) . '</option>';
       }
       $page_content .= '</select></li>';
 
       if (arg(2) !== '') {
-        $href = "'" . url('bible') . '/' . arg(1) . '/' . $arg2 .
+        // @FIXME
+// url() expects a route name or an external URI.
+// $href = "'" . url('bible') . '/' . arg(1) . '/' . $arg2 .
           "/'+this.value";
-        $book_data = db_select('bible_book_name', 'bbn')
+
+        $book_data = \Drupal::database()->select('bible_book_name', 'bbn')
           ->fields('bbn')
           ->condition('bid', $bid)
           ->condition('book', $arg2)
@@ -480,27 +562,45 @@ function theme_bible_links($variables) {
     $page_content .= '<br/>';
   }
 
-  $page_content .= '<li class="first bible-search">' .
+  // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $page_content .= '<li class="first bible-search">' .
     l(t('Search Keyword in Bible'), 'bible/search') . '</li>';
-  $page_content .= '<li>' . l(t('My Verses'), 'bible/vset/list') .
+
+  // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $page_content .= '<li>' . l(t('My Verses'), 'bible/vset/list') .
     '</li>';
+
   if ($bible_count > 1) {
     if (count($bibles) > 1) {
-      $page_content .= '<li id="bible-plain-read">' .
+      // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $page_content .= '<li id="bible-plain-read">' .
         l(t('Bible Plain-Read'), 'bible') . '</li>';
+
     }
     else {
-      $page_content .= '<li class="last bible-multi-read">' .
+      // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $page_content .= '<li class="last bible-multi-read">' .
         l(t('Bible Multi-Read'), 'bible/multiread') . '</li>';
+
     }
   }
   else {
-    $page_content .= '<li>' . l(t('Select Bible'), 'bible') .
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $page_content .= '<li>' . l(t('Select Bible'), 'bible') .
       '</li>';
+
   }
-  if (variable_get('bible_config_showbiblenote', 0) == 1) {
-    $page_content .= '<li>' . l(t('My Notes'), 'bible/note') .
+  if (\Drupal::config('bible.settings')->get('bible_config_showbiblenote') == 1) {
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $page_content .= '<li>' . l(t('My Notes'), 'bible/note') .
       '</li>';
+
   }
   $page_content .= '</ul></div>';
   return $page_content;

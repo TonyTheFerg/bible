@@ -1,0 +1,14 @@
+name: Bible
+description: 'Christian Holy Bible.'
+core: 8.x
+package: Church
+scripts:
+  - bible.js
+  - bible_bls.js
+  - bible_webimport.js
+stylesheets:
+  all:
+    - bible.css
+    - bible_bls.css
+type: module
+dependencies: {  }

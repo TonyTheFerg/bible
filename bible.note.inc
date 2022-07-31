@@ -1,10 +1,10 @@
 <?php
 
 function bible_note() {
-  global $user;
+  $user = \Drupal::currentUser();
   global $imagedir;
   if ($user->uid == 0) {
-    drupal_set_message(t('Please login.'));
+    \Drupal::messenger()->addMessage(t('Please login.'));
     drupal_goto('bible');
   }
 
@@ -16,7 +16,7 @@ function bible_note() {
     array('data' => t('Action')),
   );
 
-  $result_set = db_select('bible_note')
+  $result_set = \Drupal::database()->select('bible_note')
     ->fields('bible_note')
     ->extend('PagerDefault')
     ->condition('uid', $user->uid)
@@ -27,28 +27,67 @@ function bible_note() {
   $default_bible = _bible_get_select_bid();
   foreach ($result_set as $note){
     $pp = ($note->access === 0 ? 'public' : 'private');
-    $rows[] = array(
-      _bible_get_blslink($default_bible, $note->bls),
-      '<image src="' . $imagedir . 'access' . $pp . '.gif" title="' . $pp . ' usage" />',
-      check_plain($note->content),
-      l(t('Edit'), 'bible/note/edit/' . $note->bnid),
-    );
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $rows[] = array(
+//       _bible_get_blslink($default_bible, $note->bls),
+//       '<image src="' . $imagedir . 'access' . $pp . '.gif" title="' . $pp . ' usage" />',
+//       check_plain($note->content),
+//       l(t('Edit'), 'bible/note/edit/' . $note->bnid),
+//     );
+
   }
 
-  $output = theme('table', array('header' => $header, 'rows' => $rows));
-  $output .= theme('pager');
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output = theme('table', array('header' => $header, 'rows' => $rows));
+
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('pager');
+
 
   // Output links.
   $output .= bible_note_links();
-  $output .= theme('bible_links');
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('bible_links');
+
   return $output;
 }
 
 function bible_note_links() {
   $output = '<hr />';
-  $output .= '[' . l(t('Add Note'), 'bible/note/add') . ']';
-  $output .= '[' . l(t('Add Multi-Notes'), 'bible/note/addlines') . ']';
-  $output .= '[' . l(t('Export my notes'), 'bible/note/export') . ']';
+  // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $output .= '[' . l(t('Add Note'), 'bible/note/add') . ']';
+
+  // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $output .= '[' . l(t('Add Multi-Notes'), 'bible/note/addlines') . ']';
+
+  // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $output .= '[' . l(t('Export my notes'), 'bible/note/export') . ']';
+
   return $output;
 }
 
@@ -107,10 +146,19 @@ function bible_note_addform($form, &$form_state, $bnid = -1) {
       '#submit' => array('bible_note_deleteform_submit'),
     );
   }
-  $form['note']['links'] = array(
-    '#type' => 'item',
-    '#value' => bible_note_links() . theme('bible_links'),
-  );
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $form['note']['links'] = array(
+//     '#type' => 'item',
+//     '#value' => bible_note_links() . theme('bible_links'),
+//   );
+
   return $form;
 }
 
@@ -121,12 +169,12 @@ function bible_note_addform_submit($form, &$form_state) {
   $content = $form['note']['content']['#value'];
   $access = $form['note']['access']['#value'];
   $source = $form['note']['source']['#value'];
-  global $user;
+  $user = \Drupal::currentUser();
   if ($bnid == -1) {
     _bible_note_add($user->uid, $access, $bls, $title, $content, $source);
   }
   else {
-    db_update('bible_note')
+    \Drupal::database()->update('bible_note')
     ->fields(array (
       'access' => $access,
       'bls' => $bls,
@@ -162,7 +210,7 @@ function bible_note_delete($form, &$form_state, $bnid = -1) {
 
 function bible_note_delete_submit($form, &$form_state) {
   $bnid = $form['noteid']['#value'];
-  db_delete('bible_note')
+  \Drupal::database()->delete('bible_note')
     ->condition('bnid', $bnid)
     ->execute();
   $form_state['redirect'] = 'bible/note';
@@ -208,10 +256,19 @@ function bible_note_addlinesform($form, &$form_state) {
     '#value' => t('Add'),
     '#submit' => array('bible_note_addlinesform_submit'),
   );
-  $form['note']['links'] = array(
-    '#type' => 'item',
-    '#value' => bible_note_links() . theme("bible_links"),
-  );
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $form['note']['links'] = array(
+//     '#type' => 'item',
+//     '#value' => bible_note_links() . theme("bible_links"),
+//   );
+
   return $form;
 }
 
@@ -220,7 +277,7 @@ function bible_note_addlinesform_submit($form, &$form_state) {
   $access = $form['note']['access']['#value'];
   $title = $form['note']['title']['#value'];
   $source = $form['note']['source']['#value'];
-  global $user;
+  $user = \Drupal::currentUser();
   $line = explode("\r\n", $content);
   $addcount = 0;
   foreach ($line as $l) {
@@ -233,14 +290,14 @@ function bible_note_addlinesform_submit($form, &$form_state) {
     }
     $addcount += _bible_note_add($user->uid, $access, $data[0], $title, $data[1], $source);
   }
-  drupal_set_message(t('Bible notes added:%count', array('%count' => $addcount)));
+  \Drupal::messenger()->addMessage(t('Bible notes added:%count', array('%count' => $addcount)));
   $form['redirect'] = 'bible/note';
 }
 
 function bible_note_export() {
-  global $user;
+  $user = \Drupal::currentUser();
 
-  $result_set = db_select('bible_note', 'bn')
+  $result_set = \Drupal::database()->select('bible_note', 'bn')
     ->fields('bn')
     ->condition('uid', $user->uid)
     ->orderBy('bnid')
@@ -261,7 +318,7 @@ function bible_note_export() {
 
 function bible_note_ajax($bnid = '') {
   if ($bnobj = _bible_get_note_obj($bnid)) {
-    print check_plain($bnobj->content);
+    print \Drupal\Component\Utility\Html::escape($bnobj->content);
   }
   else {
     print '';
@@ -270,8 +327,8 @@ function bible_note_ajax($bnid = '') {
 }
 
 function _bible_get_note_obj($bnid) {
-  global $user;
-  $note = db_select('bible_note', 'bn')
+  $user = \Drupal::currentUser();
+  $note = \Drupal::database()->select('bible_note', 'bn')
     ->fields('bn')
     ->condition('bnid', $bnid)
     ->condition(db_or()
@@ -284,8 +341,8 @@ function _bible_get_note_obj($bnid) {
 }
 
 function _bible_get_note_obj_bls($bls) {
-  global $user;
-  $queryResult = db_select('bible_note', 'bn')
+  $user = \Drupal::currentUser();
+  $queryResult = \Drupal::database()->select('bible_note', 'bn')
     ->fields('bn')
     ->condition('bls', $bls)
     ->condition(db_or()
@@ -296,7 +353,7 @@ function _bible_get_note_obj_bls($bls) {
     ->execute();
   $notes = '';
   foreach ($queryResult as $bn) {
-    $notes .= check_plain($bn->content) . "\r\n";
+    $notes .= \Drupal\Component\Utility\Html::escape($bn->content) . "\r\n";
   }
   return $notes;
 }
@@ -308,7 +365,7 @@ function _bible_note_add($uid, $access, $bls, $title, $content, $source) {
   $title = str_replace("'", "\'", $title);
   $content = str_replace("'", "\'", $content);
   $source = str_replace("'", "\'", $source);
-  $bnobj = db_select('bible_note', 'bn')
+  $bnobj = \Drupal::database()->select('bible_note', 'bn')
     ->fields('bn')
     ->condition('uid', $uid)
     ->condition('bls', $bls)
@@ -317,7 +374,7 @@ function _bible_note_add($uid, $access, $bls, $title, $content, $source) {
     ->execute()
     ->fetch();
   if (empty($bnobj)) {
-    db_insert('bible_note')
+    \Drupal::database()->insert('bible_note')
       ->fields(array(
         'uid' => $uid,
         'access' => $access,

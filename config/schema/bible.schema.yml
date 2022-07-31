@@ -1,0 +1,42 @@
+bible.settings:
+  type: mapping
+  label: Settings
+  mapping:
+    bible_config_showbiblenote:
+      type: integer
+    bible_select:
+      type: integer
+    bible_sn_select:
+      type: integer
+    bible_snsearch_select:
+      type: integer
+    bible_webimport_bid:
+      type: string
+    bible_webimport_bid2:
+      type: string
+    bible_webimport_serialversion:
+      type: string
+    bible_config_multireadbiblename:
+      type: integer
+    bible_config_showchapternumber:
+      type: integer
+    bible_config_biblelistorder:
+      type: integer
+    bible_block_GV_verses:
+      type: string
+    bible_data_active:
+      type: integer
+    bible_data_bdtypeselect:
+      type: string
+    bible_data_langcode:
+      type: string
+    bible_bls_popup_morelink:
+      type: string
+    bible_block_searchblockshowadvance:
+      type: string
+    bible_quotes_language:
+      type: string
+    bible_block_GV_bls:
+      type: string
+    bible_proverb_options:
+      type: string

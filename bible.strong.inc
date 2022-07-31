@@ -6,14 +6,14 @@
 
 function bible_sn($snid, $sn) {
   if (!empty($sn)) {
-    $sn_object = db_select('bible_strongnumber', 'bsn')
+    $sn_object = \Drupal::database()->select('bible_strongnumber', 'bsn')
       ->fields('bsn')
       ->condition('snid', $snid)
       ->condition('sn', $sn)
       ->execute()
       ->fetch();
     if ($sn_object === NULL) {
-      $top_snid = db_select('bible_sn_list', 'bsnl')
+      $top_snid = \Drupal::database()->select('bible_sn_list', 'bsnl')
         ->fields('bsnl', array('snid'))
         ->range(0, 1)
         ->execute()
@@ -25,40 +25,43 @@ function bible_sn($snid, $sn) {
         return t('Strong\'s Number File not imported; Or Strong\'s Number is mistype.');
       }
     }
-    if (variable_get('bible_sn_select', 0) === 0) {
-      variable_set('bible_sn_select', $snid);
+    if (\Drupal::config('bible.settings')->get('bible_sn_select') === 0) {
+      \Drupal::configFactory()->getEditable('bible.settings')->set('bible_sn_select', $snid)->save();
     }
-    $sn_content = _bible_sn_replace(check_plain($sn_object->content));
+    $sn_content = _bible_sn_replace(\Drupal\Component\Utility\Html::escape($sn_object->content));
     $output = str_replace(
       "\n",
       '<br />',
       t('Strong\'s Number') . '[<b>' . $sn . '</b>]<br />' . $sn_content
     );
-    $snselect = variable_get('bible_snsearch_select', 0);
+    $snselect = \Drupal::config('bible.settings')->get('bible_snsearch_select');
     if ($snselect <> 0) {
-      $output .= '<hr />[' .
-        l(
-          'Search for all appearance',
-          'bible/snsearch/' . $snselect . '/' . $sn
-        ) .
-        ']';
+      // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $output .= '<hr />[' .
+//         l(
+//           'Search for all appearance',
+//           'bible/snsearch/' . $snselect . '/' . $sn
+//         ) .
+//         ']';
+
     }
     return $output;
   }
   elseif (!empty($snid)) {
-    drupal_goto('bible/sn/' . variable_get('bible_sn_select', 0) . '/' . $snid);
+    drupal_goto('bible/sn/' . \Drupal::config('bible.settings')->get('bible_sn_select') . '/' . $snid);
   }
 }
 
 function bible_snajax($sn) {
-  $snid = variable_get('bible_sn_select', 0);
-  $snlist = db_select('bible_strongnumber', 'bsn')
+  $snid = \Drupal::config('bible.settings')->get('bible_sn_select');
+  $snlist = \Drupal::database()->select('bible_strongnumber', 'bsn')
     ->fields('bsn')
     ->condition('snid', $snid)
     ->condition('sn', $sn)
     ->execute();
   if ($snobj = $snlist->fetch()) {
-    $sndata = $snobj->sn . "\r" . str_replace("\n", '', check_plain($snobj->content));
+    $sndata = $snobj->sn . "\r" . str_replace("\n", '', \Drupal\Component\Utility\Html::escape($snobj->content));
     $sndata = str_replace("\r", '|', $sndata);
     if (strlen($sndata) > 300) {
       $sndata = substr($sndata, 0, 300) . '...';
@@ -82,9 +85,9 @@ function bible_ajax_vcontent($bls) {
  * BdB: URL is something like: bible/snsearch/20/H1000
  */
 function bible_sn_search($bid, $strong_number) {
-  $arg3 = check_plain(arg(3));
+  $arg3 = \Drupal\Component\Utility\Html::escape(arg(3));
   if (!empty($arg3)) {
-    $query = db_select('bible_context')
+    $query = \Drupal::database()->select('bible_context')
       ->fields('bible_context')
       ->condition('bid', $bid)
       ->condition('context', '%<' . strtoupper(arg(3)) . '>%', 'LIKE')
@@ -104,15 +107,26 @@ function bible_sn_search($bid, $strong_number) {
         '<span class="bible-strong">&lt;' . $arg3 . '></span>',
         $context
       );
-      $rows[] = array(
-        l(
-          $bls . ':' . $verse->verse,
-          'bible/' . $bid . '/' . $verse->book . '/' . $verse->chapter
-        ),
-        $context,
-      );
+      // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $rows[] = array(
+//         l(
+//           $bls . ':' . $verse->verse,
+//           'bible/' . $bid . '/' . $verse->book . '/' . $verse->chapter
+//         ),
+//         $context,
+//       );
+
     }
-    drupal_add_css(drupal_get_path('module', 'bible') . '/bible.css');
+    // @FIXME
+// The Assets API has totally changed. CSS, JavaScript, and libraries are now
+// attached directly to render arrays using the #attached property.
+// 
+// 
+// @see https://www.drupal.org/node/2169605
+// @see https://www.drupal.org/node/2408597
+// drupal_add_css(drupal_get_path('module', 'bible') . '/bible.css');
+
     $count = $count_query->execute()
       ->rowCount();
     $output = t('Search in Bible [@bible] for Strong\'s Number [@kw], total found [@count] time(s).', array(
@@ -121,11 +135,29 @@ function bible_sn_search($bid, $strong_number) {
       '@count' => $count,
     ));
     $header = array();
-    $output .= theme('table', array('header' => $header, 'rows' => $rows));
-    $output .= theme('pager');
+    // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('table', array('header' => $header, 'rows' => $rows));
+
+    // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('pager');
+
     return $output;
   }
   elseif (!empty($bid)) {
-    drupal_goto('bible/sn/' . variable_get('bible_sn_select', 0) . '/' . $bid);
+    drupal_goto('bible/sn/' . \Drupal::config('bible.settings')->get('bible_sn_select') . '/' . $bid);
   }
 }

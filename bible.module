@@ -136,20 +136,36 @@ function bible_init() {
   $path = drupal_get_path('module', 'bible');
   global $base_path, $imagedir, $base_url;
   $imagedir = $base_path. $path . '/images/';
-  drupal_add_js(
-    array('baseurl' => $base_url . '/'),
-    array(
-      'type' => 'setting',
-      'scope' => JS_DEFAULT,
-    )
-  );
-  drupal_add_js(
-    array('bibleimgurl' => $imagedir),
-    array(
-      'type' => 'setting',
-      'scope' => JS_DEFAULT,
-    )
-  );
+  // @FIXME
+// The Assets API has totally changed. CSS, JavaScript, and libraries are now
+// attached directly to render arrays using the #attached property.
+// 
+// 
+// @see https://www.drupal.org/node/2169605
+// @see https://www.drupal.org/node/2408597
+// drupal_add_js(
+//     array('baseurl' => $base_url . '/'),
+//     array(
+//       'type' => 'setting',
+//       'scope' => JS_DEFAULT,
+//     )
+//   );
+
+  // @FIXME
+// The Assets API has totally changed. CSS, JavaScript, and libraries are now
+// attached directly to render arrays using the #attached property.
+// 
+// 
+// @see https://www.drupal.org/node/2169605
+// @see https://www.drupal.org/node/2408597
+// drupal_add_js(
+//     array('bibleimgurl' => $imagedir),
+//     array(
+//       'type' => 'setting',
+//       'scope' => JS_DEFAULT,
+//     )
+//   );
+
 }
 
 /**
@@ -193,18 +209,26 @@ function bible_block_configure($delta = '') {
         $biblelist = _bible_get_bible_list();
         $biblelist[-1] = t('[By System Default]');
         ksort($biblelist);
-        $form['bible_dgv_options'] = array(
+        // @FIXME
+// Could not extract the default value because it is either indeterminate, or
+// not scalar. You'll need to provide a default value in
+// config/install/bible.settings.yml and config/schema/bible.schema.yml.
+$form['bible_dgv_options'] = array(
           '#type' => 'select',
           '#title' => t('Bible Version Options'),
           '#options' => $biblelist,
           '#description' => t('Select bible version.'),
-          '#default_value' => variable_get('bible_dgv_options',  -1),
+          '#default_value' => \Drupal::config('bible.settings')->get('bible_dgv_options'),
         );
       }
       break;
 
     case 2:
-      $form['bible_proverb_options'] = array(
+      // @FIXME
+// Could not extract the default value because it is either indeterminate, or
+// not scalar. You'll need to provide a default value in
+// config/install/bible.settings.yml and config/schema/bible.schema.yml.
+$form['bible_proverb_options'] = array(
         '#type' => 'select',
         '#title' => t('Display Options'),
         '#options' => array(
@@ -212,7 +236,7 @@ function bible_block_configure($delta = '') {
           'chapter' => t('Whole chapter'),
         ),
         '#description' => t('Select display options.'),
-        '#default_value' => variable_get('bible_proverb_options',  t('verse')),
+        '#default_value' => \Drupal::config('bible.settings')->get('bible_proverb_options'),
       );
       break;
 
@@ -221,13 +245,13 @@ function bible_block_configure($delta = '') {
         '#type' => 'textfield',
         '#title' => t('Quotes Language'),
         '#description' => t('Set the language(s) to show. Use * for all quotes. Selected language can seperate by "|". Ex. en|zh-hant'),
-        '#default_value' => variable_get('bible_quotes_language',  '*'),
+        '#default_value' => \Drupal::config('bible.settings')->get('bible_quotes_language'),
       );
       break;
 
     case 5:
-      global $user;
-      $query = db_select('bible_userprofile', 'buc')
+      $user = \Drupal::currentUser();
+      $query = \Drupal::database()->select('bible_userprofile', 'buc')
         ->fields('buc', array('item'))
         ->condition('uid', $user->uid)
         ->condition(db_or()
@@ -249,12 +273,16 @@ function bible_block_configure($delta = '') {
         );
         $verseset[$vset] = $vitem;
       }
-      $form['bible_verseset_options'] = array(
+      // @FIXME
+// Could not extract the default value because it is either indeterminate, or
+// not scalar. You'll need to provide a default value in
+// config/install/bible.settings.yml and config/schema/bible.schema.yml.
+$form['bible_verseset_options'] = array(
         '#type' => 'select',
         '#title' => t('My Verse Options'),
         '#options' => $verseset,
         '#description' => t('Select Verse set.'),
-        '#default_value' => variable_get('bible_verseset_options',  -1),
+        '#default_value' => \Drupal::config('bible.settings')->get('bible_verseset_options'),
       );
       break;
   }
@@ -268,19 +296,19 @@ function bible_block_save($delta = '', $edit = array()) {
   switch ($delta) {
     case 0:
       if (!empty($edit['bible_dgv_options']))
-        variable_set('bible_dgv_options', $edit['bible_dgv_options']);
+        \Drupal::configFactory()->getEditable('bible.settings')->set('bible_dgv_options', $edit['bible_dgv_options'])->save();
       break;
 
     case 2:
-      variable_set('bible_proverb_options', $edit['bible_proverb_options']);
+      \Drupal::configFactory()->getEditable('bible.settings')->set('bible_proverb_options', $edit['bible_proverb_options'])->save();
       break;
 
     case 4:
-      variable_set('bible_quotes_language', $edit['quotes_lang']);
+      \Drupal::configFactory()->getEditable('bible.settings')->set('bible_quotes_language', $edit['quotes_lang'])->save();
       break;
 
     case 5:
-      variable_set('bible_verseset_options', $edit['bible_verseset_options']);
+      \Drupal::configFactory()->getEditable('bible.settings')->set('bible_verseset_options', $edit['bible_verseset_options'])->save();
       break;
   }
   return;
@@ -295,12 +323,32 @@ function bible_block_view($delta = '') {
     // Daily Golden Verse block.
     case 0:
       $block['subject'] = t('Daily Golden Verse');
-      $gvtype = variable_get('bible_block_GV_bls_type', BIBLE_GV_UPDATE_EVERY_TIME);
-      $gvtime = variable_get('bible_block_GV_bls_time', time());
+      // @FIXME
+// Could not extract the default value because it is either indeterminate, or
+// not scalar. You'll need to provide a default value in
+// config/install/bible.settings.yml and config/schema/bible.schema.yml.
+$gvtype = \Drupal::config('bible.settings')->get('bible_block_GV_bls_type');
+      // @FIXME
+// Could not extract the default value because it is either indeterminate, or
+// not scalar. You'll need to provide a default value in
+// config/install/bible.settings.yml and config/schema/bible.schema.yml.
+$gvtime = \Drupal::config('bible.settings')->get('bible_block_GV_bls_time');
       $gvelapse = time() - $gvtime;
       if ((date('Y-m-d', $gvtime) != date('Y-m-d') && $gvtype == BIBLE_GV_UPDATE_DAILY) || ($gvelapse > 3600 && $gvtype == BIBLE_GV_UPDATE_HOURLY) || ($gvtype == BIBLE_GV_UPDATE_EVERY_TIME)) {
-        $default_url = variable_get('bible_golden_verse_fetch_url', BIBLE_GOLDEN_VERSE_DEFAULT_URL);
-        $xml = drupal_http_request($default_url);
+        // @FIXME
+// Could not extract the default value because it is either indeterminate, or
+// not scalar. You'll need to provide a default value in
+// config/install/bible.settings.yml and config/schema/bible.schema.yml.
+$default_url = \Drupal::config('bible.settings')->get('bible_golden_verse_fetch_url');
+        // @FIXME
+// drupal_http_request() has been replaced by the Guzzle HTTP client, which is bundled
+// with Drupal core.
+// 
+// 
+// @see https://www.drupal.org/node/1862446
+// @see http://docs.guzzlephp.org/en/latest
+// $xml = drupal_http_request($default_url);
+
         if ($xml->code == 200 && $xml->data !== '') {
           $xml_parser = xml_parser_create();
           xml_parse_into_struct($xml_parser, $xml->data, $vals, $index);
@@ -319,12 +367,12 @@ function bible_block_view($delta = '') {
         else {
           $bls = 'PS:119:105';
         }
-        variable_set('bible_block_GV_bls', $bls);
-        variable_set('bible_block_GV_bls_time', time());
+        \Drupal::configFactory()->getEditable('bible.settings')->set('bible_block_GV_bls', $bls)->save();
+        \Drupal::configFactory()->getEditable('bible.settings')->set('bible_block_GV_bls_time', time())->save();
       }
       else {
         if ($gvtype == BIBLE_GV_GET_FROM_VERSE_LIST) {
-          $verses = trim(variable_get('bible_block_GV_verses', ''));
+          $verses = trim(\Drupal::config('bible.settings')->get('bible_block_GV_verses'));
           $verses = explode("\n", $verses);
           $bls = trim($verses[mt_rand(0, count($verses) - 1)]);
           if (!$bls) {
@@ -332,22 +380,35 @@ function bible_block_view($delta = '') {
           }
         }
         else {
-          $bls = variable_get('bible_block_GV_bls', 'PS:119:105');
+          $bls = \Drupal::config('bible.settings')->get('bible_block_GV_bls');
           if ($gvelapse === 0) {
-            variable_set('bible_block_GV_bls_time', time());
+            \Drupal::configFactory()->getEditable('bible.settings')->set('bible_block_GV_bls_time', time())->save();
           }
         }
       }
-      $bid = variable_get('bible_dgv_options', -1);
-      $block['content'] = theme('bible_golden_verse', array(
-        'versearray' => _bible_get_bls_versearray($bls, $bid),
-      ));
+      // @FIXME
+// Could not extract the default value because it is either indeterminate, or
+// not scalar. You'll need to provide a default value in
+// config/install/bible.settings.yml and config/schema/bible.schema.yml.
+$bid = \Drupal::config('bible.settings')->get('bible_dgv_options');
+      // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $block['content'] = theme('bible_golden_verse', array(
+//         'versearray' => _bible_get_bls_versearray($bls, $bid),
+//       ));
+
       break;
 
     // Bible Search block.
     case 1:
       $block['subject'] = t('Bible Search');
-      $block['content'] = drupal_get_form('bible_search_form', FALSE, TRUE);
+      $block['content'] = \Drupal::formBuilder()->getForm('bible_search_form', FALSE, TRUE);
       break;
 
     // Daily Proverb block.
@@ -357,12 +418,21 @@ function bible_block_view($delta = '') {
       $bid = _bible_get_select_bid();
       // Display options. One verse ($opt=verse) or whole chapter
       // ($opt=chapter).
-      $opt = variable_get('bible_proverb_options', 'verse');
-      $block['content'] = theme('bible_daily_proverb', array(
-        'bid' => $bid,
-        'chapter' => _bible_get_daily_proverb($bid),
-        'opt' => $opt,
-      ));
+      $opt = \Drupal::config('bible.settings')->get('bible_proverb_options');
+      // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $block['content'] = theme('bible_daily_proverb', array(
+//         'bid' => $bid,
+//         'chapter' => _bible_get_daily_proverb($bid),
+//         'opt' => $opt,
+//       ));
+
       break;
 
     // Golden Verse block.
@@ -370,16 +440,33 @@ function bible_block_view($delta = '') {
       $block['subject'] = t('Golden Verse');
       // Bible translation.
       $bid = _bible_get_select_bid();
-      $block['content'] = theme('bible_golden_verse', array(
-        'versearray' => _bible_get_random_verse($bid),
-      ));
+      // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $block['content'] = theme('bible_golden_verse', array(
+//         'versearray' => _bible_get_random_verse($bid),
+//       ));
+
       break;
 
     // Religion Quotes.
     case 4:
       $quoteurl = BIBLE_WEBSERVICE_URL . '/quote//' .
-        variable_get('bible_quotes_language', '*');
-      $xml = drupal_http_request($quoteurl);
+        \Drupal::config('bible.settings')->get('bible_quotes_language');
+      // @FIXME
+// drupal_http_request() has been replaced by the Guzzle HTTP client, which is bundled
+// with Drupal core.
+// 
+// 
+// @see https://www.drupal.org/node/1862446
+// @see http://docs.guzzlephp.org/en/latest
+// $xml = drupal_http_request($quoteurl);
+
       if ($xml->code == 200 && $xml->data !== '') {
         $doc = new DOMDocument();
         $doc->loadXML($xml->data);
@@ -387,29 +474,59 @@ function bible_block_view($delta = '') {
         $author = $root->getAttribute('author');
         $quote = $root->nodeValue;
         $block['subject'] = t('Quotes of Religion');
-        $block['content'] = theme('bible_quotes', array(
-          'quote' => $quote,
-          'author' => $author,
-        ));
+        // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $block['content'] = theme('bible_quotes', array(
+//           'quote' => $quote,
+//           'author' => $author,
+//         ));
+
       }
       break;
 
     // My Verses.
     case 5:
       $block['subject'] = t('My Verses');
-      $vset = variable_get('bible_verseset_options',  -1);
+      // @FIXME
+// Could not extract the default value because it is either indeterminate, or
+// not scalar. You'll need to provide a default value in
+// config/install/bible.settings.yml and config/schema/bible.schema.yml.
+$vset = \Drupal::config('bible.settings')->get('bible_verseset_options');
       $bid = _bible_get_select_bid();
-      $block['content'] = theme('bible_golden_verse', array(
-        'versearray' => _bible_get_random_myverse($bid, $vset),
-      ));
+      // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $block['content'] = theme('bible_golden_verse', array(
+//         'versearray' => _bible_get_random_myverse($bid, $vset),
+//       ));
+
       break;
   }
   return $block;
 }
 
 /**
- * Implements hook_menu().
+ * @FIXME
+ * This implementation of hook_menu() cannot be automatically converted because
+ * it contains logic (i.e., branching statements, function calls, object
+ * instantiation, etc.) You will need to convert it manually. Sorry!
+ *
+ * For more information on how to convert hook_menu() to Drupal 8's new routing
+ * and linking systems, see https://api.drupal.org/api/drupal/core%21includes%21menu.inc/group/menu/8
  */
+
+
 function bible_menu() {
   $items['admin/config/bible'] = array(
     'title' => 'Bible module settings',
@@ -643,7 +760,7 @@ function bible_menu() {
  * Load a Bible module by bid.
  */
 function bible_load_info_by_id($bid) {
-  return db_select('bible_list', 'bl')
+  return \Drupal::database()->select('bible_list', 'bl')
     ->fields('bl')
     ->condition('bid', $bid)
     ->execute()
@@ -742,31 +859,38 @@ function bible_user_categories() {
 
 /**
  * Implements hook_user_presave().
+ *
+ * @FIXME
+ * The $edit and $category parameters are gone in Drupal 8. They have been left
+ * here in order to prevent 'undefined variable' errors, but they will never
+ * actually be passed to this hook. You'll need to modify this function and
+ * remove every reference to them.
  */
-function bible_user_presave(&$edit, $account, $category) {
+
+function bible_user_presave(\Drupal\user\UserInterface $account, $category, $edit = NULL) {
   if (!isset($edit['defaultbible']) || $edit['defaultbible'] == -1 || $edit['defaultbible'] === '') {
-    if (isset($account->uid)) {
-      db_delete('bible_userprofile')
-        ->condition('uid', $account->uid)
+    if (!$account->id()) {
+      \Drupal::database()->delete('bible_userprofile')
+        ->condition('uid', $account->id())
         ->condition('item', 'bibleselect')
         ->execute();
     }
   }
   else {
-    $pobj = _bible_get_userprofile2($account->uid, 'bibleselect', '');
+    $pobj = _bible_get_userprofile2($account->id(), 'bibleselect', '');
     if ($pobj !== NULL) {
-      db_update('bible_userprofile')
+      \Drupal::database()->update('bible_userprofile')
         ->fields(array(
           'data' => $edit['defaultbible'],
         ))
-        ->condition('uid', $account->uid)
+        ->condition('uid', $account->id())
         ->condition('item', 'bibleselect')
         ->execute();
     }
     else {
-      db_insert('bible_userprofile')
+      \Drupal::database()->insert('bible_userprofile')
         ->fields(array(
-          'uid' => $account->uid,
+          'uid' => $account->id(),
           'item' => 'bibleselect',
           'data' => $edit['defaultbible'],
         ))
@@ -778,22 +902,25 @@ function bible_user_presave(&$edit, $account, $category) {
 /**
  * Implements hook_user_view().
  */
-function bible_user_view($user, $view_mode, $langcode) {
+function bible_user_view(array &$build, \Drupal\user\UserInterface $user, $view_mode, $langcode) {
   $user->content['bible'] = array(
     '#type' => 'user_profile_category',
     '#title' => t('Bible'),
   );
-  $user->content['bible']['vset'] = array(
-    '#type' => 'user_profile_item',
-    '#title' => t('Bible'),
-    '#markup' => l(t('My Verses'), 'bible/vset/list'),
-  );
+  // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $user->content['bible']['vset'] = array(
+//     '#type' => 'user_profile_item',
+//     '#title' => t('Bible'),
+//     '#markup' => l(t('My Verses'), 'bible/vset/list'),
+//   );
+
 }
 
 /**
  * Implements hook_form_FORM_ID_alter().
  */
-function bible_form_user_profile_form_alter(&$form, &$form_state) {
+function bible_form_user_profile_form_alter(&$form, \Drupal\Core\Form\FormStateInterface &$form_state) {
   if ($form['#user_category'] == 'bible') {
     $form['bible'] = array(
       '#type' => 'fieldset',
@@ -816,14 +943,14 @@ function bible_form_user_profile_form_alter(&$form, &$form_state) {
 
 function bible_user_access($permission = 'access bible content', $account = NULL) {
   if ($account === NULL ) {
-    global $user;
+    $user = \Drupal::currentUser();
     $account = $user;
   }
   // Disallow anonymous access, regardless of permissions.
   if (!$account->uid) {
     return FALSE;
   }
-  if (!user_access($permission, $account)) {
+  if (!$account->hasPermission($permission)) {
     return FALSE;
   }
   return TRUE;
@@ -834,15 +961,15 @@ function bible_multiread() {
   $options = array();
   $enabled = array();
   $isdefault = FALSE;
-  $queryResult = db_query('SELECT * FROM {bible_list}');
+  $queryResult = \Drupal::database()->query('SELECT * FROM {bible_list}');
   foreach ($queryResult as $bb) {
-    if (variable_get('bible_select', 0) == 0) {
-      variable_set('bible_select', $bb->bid);
+    if (\Drupal::config('bible.settings')->get('bible_select') == 0) {
+      \Drupal::configFactory()->getEditable('bible.settings')->set('bible_select', $bb->bid)->save();
     }
     $options[$bb->bid] = $bb->bsn;
     $form['bible'][$bb->bid] = array('#value' => $bb->bname);
     $enabled[] = $bb->bid;
-    if ($bb->bid == variable_get('bible_select', 0)) {
+    if ($bb->bid == \Drupal::config('bible.settings')->get('bible_select')) {
       $isdefault = $bb->bid;
     }
   }
@@ -876,23 +1003,26 @@ function bible_multiread_submit($form, &$form_state) {
 }
 
 function _bible_sn_replace($context) {
-  $replace = '<span class="biblesn">[<a href=' . url('bible/sn/') .'\1\2>\1\2</a>]</span>';
+  // @FIXME
+// url() expects a route name or an external URI.
+// $replace = '<span class="biblesn">[<a href=' . url('bible/sn/') .'\1\2>\1\2</a>]</span>';
+
   return preg_replace('/<([H|G])(\d{4})>/', $replace, $context);
 }
 
 // Search Functions.
 
 function bible_search_keyword() {
-  $arg3 = trim(check_plain(arg(3)));
-  $arg4 = check_plain(arg(4));
+  $arg3 = trim(\Drupal\Component\Utility\Html::escape(arg(3)));
+  $arg4 = \Drupal\Component\Utility\Html::escape(arg(4));
   if (!empty($arg4)) {
     $defaultBible = ($arg4 == '*' ? '*' : _bible_get_bible_id_number($arg4));
   }
   else {
     $defaultBible = _bible_get_select_bid();
   }
-  $regex_enabled = (check_plain(arg(5)) == 1);
-  $blsrange = check_plain(arg(6));
+  $regex_enabled = (\Drupal\Component\Utility\Html::escape(arg(5)) == 1);
+  $blsrange = \Drupal\Component\Utility\Html::escape(arg(6));
   if (empty($arg3) && $blsrange === '') {
     return t('Please input Search Keyword.');
   }
@@ -903,7 +1033,7 @@ function bible_search_keyword() {
     array('data' => t('Context'), 'field' => 'context'),
   );
 
-  $search_query = db_select('bible_context', 'bc')
+  $search_query = \Drupal::database()->select('bible_context', 'bc')
     ->fields('bc')
     ->condition('linemark', '*', '<>');
 
@@ -949,7 +1079,7 @@ function bible_search_keyword() {
       $book = explode('-', $bls[0]);
       if (count($book) == 2) {
         if ($defaultBible == '*') {
-          $bid = db_select('bible_book_name', 'bbn')
+          $bid = \Drupal::database()->select('bible_book_name', 'bbn')
             ->fields('bbn', array('bid'))
             ->range(1, 1)
             ->execute()
@@ -958,17 +1088,17 @@ function bible_search_keyword() {
         else {
           $bid = $defaultBible;
         }
-        $query = db_select('bible_book_name', 'bbn')
+        $query = \Drupal::database()->select('bible_book_name', 'bbn')
           ->fields('bbn', array('bkid', 'book'))
           ->condition('bid', $bid);
-        $subquery = db_select('bible_book_name', 'bbn')
+        $subquery = \Drupal::database()->select('bible_book_name', 'bbn')
           ->fields('bbn', array('bkid'))
           ->condition('book', $book[0])
           ->condition('bid', $bid)
           ->execute()
           ->fetchField();
         $query->condition('bkid', $subquery, '>=');
-        $subquery = db_select('bible_book_name', 'bbn')
+        $subquery = \Drupal::database()->select('bible_book_name', 'bbn')
           ->fields('bbn', array('bkid'))
           ->condition('book', $book[1])
           ->condition('bid', $bid)
@@ -1034,7 +1164,10 @@ function bible_search_keyword() {
       }
       $lastbid = $verse->bid;
     }
-    $searchlink = url('bible/' . $verse->bid . '/' . $verse->book . '/' . $verse->chapter . '/' . $verse->verse);
+    // @FIXME
+// url() expects a route name or an external URI.
+// $searchlink = url('bible/' . $verse->bid . '/' . $verse->book . '/' . $verse->chapter . '/' . $verse->verse);
+
     $searchlink .= '#v' . $verse->verse;
     $content = !empty($kwlist) ? preg_replace('/(' . implode('|', $kwlist) . ')/', '<span class="searchkw">\1</span>', $verse->context) : $verse->context;
     $rows[] = array(
@@ -1059,10 +1192,37 @@ function bible_search_keyword() {
       '@count' => $countobj,
     ));
   }
-  $output .= theme('table', array('header' => $header, 'rows' => $rows));
-  $output .= theme('pager');
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('table', array('header' => $header, 'rows' => $rows));
+
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('pager');
+
   // Output links.
-  $output .= theme('bible_links', array(array(), 1));
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('bible_links', array(array(), 1));
+
   return $output;
 }
 
@@ -1111,7 +1271,7 @@ function bible_search_form($form, &$form_state, $useframe = TRUE, $isblock = FAL
     );
   }
 
-  if (!$isblock || variable_get('bible_block_searchblockshowadvance', '0') == 1) {
+  if (!$isblock || \Drupal::config('bible.settings')->get('bible_block_searchblockshowadvance') == 1) {
     $form['search']['advance'] = array(
       '#type' => 'fieldset',
       '#title' => t('Advanced Search Options'),
@@ -1152,14 +1312,14 @@ function bible_search_form_submit($form, &$form_state) {
 }
 
 function bible_verseset_toggle($bls = '', $vset = 0) {
-  global $user;
+  $user = \Drupal::currentUser();
   if ($user->uid == 0) {
     return -1;
   }
   $vsetitem = ($vset <= 0 ? 'vs_goldenverse' : 'vs_verseset' . $vset);
   $pobj = _bible_get_verseset_obj($vset, $bls);
   if ($pobj === NULL) {
-    db_insert('bible_userprofile')
+    \Drupal::database()->insert('bible_userprofile')
       ->fields(array(
         'uid' => $user->uid,
         'item' => $vsetitem,
@@ -1168,7 +1328,7 @@ function bible_verseset_toggle($bls = '', $vset = 0) {
       ->execute();
   }
   else {
-    db_delete('bible_userprofile')
+    \Drupal::database()->delete('bible_userprofile')
       ->condition('pid', $pobj->pid)
       ->execute();
   }
@@ -1176,22 +1336,22 @@ function bible_verseset_toggle($bls = '', $vset = 0) {
 }
 
 function bible_verseset($bibles = 1, $bls = '', $vset = NULL, $more = NULL, $tag = NULL) {
-  global $user;
+  $user = \Drupal::currentUser();
   if ($user->uid == 0) {
     return;
   }
   $gotopath = '';
   $vcount = _bible_get_verse_count($bls, $bibles);
   if ($vcount === 0) {
-    drupal_set_message(t('[<b>@bls</b>] is not valid.', array('@bls' => $bls)), 'error');
+    \Drupal::messenger()->addError(t('[<b>@bls</b>] is not valid.', array('@bls' => $bls)));
     $gotopath = 'bible/' . $bibles;
   }
   else if ($vcount > 1) {
-    drupal_set_message(t('[<b>@bls</b>] is more than one verse.', array('@bls' => $bls)), 'error');
+    \Drupal::messenger()->addError(t('[<b>@bls</b>] is more than one verse.', array('@bls' => $bls)));
     $gotopath = 'bible/' . $bibles;
   }
   else if (bible_verseset_toggle($bls, $vset) == -1) {
-    drupal_set_message(t('Please mark verse after login.'));
+    \Drupal::messenger()->addMessage(t('Please mark verse after login.'));
     $gotopath = 'bible/' . $bibles;
   }
   if ($tag !== NULL) {
@@ -1222,14 +1382,14 @@ function bible_verseset($bibles = 1, $bls = '', $vset = NULL, $more = NULL, $tag
 function bible_verseset_list($vset = -1) {
   global $user, $imagedir;
   if ($user->uid == 0) {
-    drupal_set_message(t('Please login.'));
+    \Drupal::messenger()->addMessage(t('Please login.'));
     drupal_goto('bible');
   }
 
   $output = '';
   $header = array();
   $rows = array();
-  $query = db_select('bible_userprofile', 'bup')
+  $query = \Drupal::database()->select('bible_userprofile', 'bup')
     ->fields('bup', array('item'))
     ->condition('uid', $user->uid)
     ->condition(db_or()
@@ -1242,13 +1402,25 @@ function bible_verseset_list($vset = -1) {
   foreach ($result_set as $vs) {
     $vno = ($vs->item == 'vs_goldenverse' ? 0 : substr($vs->item, strlen($vs->item)-1, 1));
     $vitem = ($vs->item == 'vs_goldenverse' ? t('Golden Verse') : t('Verse Set') . ' ' . $vno);
-    $rows[] = array(
-      $vitem,
-      '[' . l($vs->c, 'bible/vset/list/' . $vno) . ']',
-    );
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $rows[] = array(
+//       $vitem,
+//       '[' . l($vs->c, 'bible/vset/list/' . $vno) . ']',
+//     );
+
   }
   if ($rows) {
-    $output .= theme('table', array('header' => $header, 'rows' => $rows));
+    // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('table', array('header' => $header, 'rows' => $rows));
+
   }
 
   $rows = array();
@@ -1260,7 +1432,7 @@ function bible_verseset_list($vset = -1) {
   );
   $defaultBible = _bible_get_select_bid();
   $vsetitem = ($vset <= 0 ? 'goldenverse' : 'verseset' . $vset);
-  $result_set = db_select('bible_userprofile', 'u')
+  $result_set = \Drupal::database()->select('bible_userprofile', 'u')
     ->fields('u', array('data'))
     ->extend('PagerDefault')
     ->condition('uid', $user->uid)
@@ -1271,29 +1443,62 @@ function bible_verseset_list($vset = -1) {
     $para = explode(';', $verse->data, 2);
     $data = explode(':', $para[0]);
     $bls = _bible_get_chapter_sname($defaultBible, $data[0]) . ':' . $data[1];
-    $verselink = url('bible/' . $defaultBible . '/' . $data[0] . '/' . $data[1] . '/' . $data[2]);
+    // @FIXME
+// url() expects a route name or an external URI.
+// $verselink = url('bible/' . $defaultBible . '/' . $data[0] . '/' . $data[1] . '/' . $data[2]);
+
     $verselink .= '#v' . $data[2];
-    $rows[] = array(
-      '<a href="' . $verselink. '">' . $bls . ':' . $data[2] . '</a>',
-      _bible_get_verse_content($verse->data),
-      (count($para) == 1 ? '' : $para[1]),
-      l(
-        '<image src=' . $imagedir . 'delete.gif />',
-        'bible/vset/' . $defaultBible . '/' . $verse->data . '/' . $vset . '/list',
-        array('html' => TRUE)
-      ),
-    );
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $rows[] = array(
+//       '<a href="' . $verselink. '">' . $bls . ':' . $data[2] . '</a>',
+//       _bible_get_verse_content($verse->data),
+//       (count($para) == 1 ? '' : $para[1]),
+//       l(
+//         '<image src=' . $imagedir . 'delete.gif />',
+//         'bible/vset/' . $defaultBible . '/' . $verse->data . '/' . $vset . '/list',
+//         array('html' => TRUE)
+//       ),
+//     );
+
   }
   if ($rows) {
-    $output .= theme('table', array('header' => $header, 'rows' => $rows));
-    $output .= theme('pager');
+    // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('table', array('header' => $header, 'rows' => $rows));
+
+    // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('pager');
+
   }
 
-  $addform = drupal_get_form('bible_verseset_addblsform', $vset);
-  $output .= drupal_render($addform);
+  $addform = \Drupal::formBuilder()->getForm('bible_verseset_addblsform', $vset);
+  $output .= \Drupal::service("renderer")->render($addform);
 
   // Output links.
-  $output .= theme('bible_links');
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('bible_links');
+
   return $output;
 }
 
@@ -1342,7 +1547,7 @@ function bible_verseset_addblsform_submit($form, &$form_state) {
 }
 
 function bible_verseset_status($bls) {
-  global $user;
+  $user = \Drupal::currentUser();
   if ($user->uid == 0) {
     return '000000';
   }
@@ -1365,10 +1570,10 @@ function bible_verseset_addtag($bls, $vset, $tag) {
   if ($tag === '') {
     return;
   }
-  global $user;
+  $user = \Drupal::currentUser();
   $pobj = _bible_get_verseset_obj($vset, $bls);
   if (empty ($pobj)) {
-    db_insert('bible_userprofile')
+    \Drupal::database()->insert('bible_userprofile')
       ->fields(array(
         'uid' => $user->uid,
         'item' => $vset,
@@ -1377,7 +1582,7 @@ function bible_verseset_addtag($bls, $vset, $tag) {
       ->execute();
   }
   else {
-    db_update('bible_userprofile')
+    \Drupal::database()->update('bible_userprofile')
       ->fields(array(
         'data' => $bls . ';' . $tag,
       ))
@@ -1387,10 +1592,10 @@ function bible_verseset_addtag($bls, $vset, $tag) {
 }
 
 function _bible_get_verseset_obj($vset, $bls) {
-  global $user;
+  $user = \Drupal::currentUser();
   $vsetitem = ($vset <= 0 ? 'vs_goldenverse' : 'vs_verseset' . $vset);
 
-  $query = db_select('bible_userprofile', 'bup')
+  $query = \Drupal::database()->select('bible_userprofile', 'bup')
     ->fields('bup')
     ->condition('uid', $user->uid)
     ->condition('item', $vsetitem)
@@ -1407,7 +1612,7 @@ function _bible_get_verseset_obj($vset, $bls) {
 
 function bible_refverse($bls = NULL, $bibles_ = NULL) {
   if (empty($bls) || strlen($bls) > 11) {
-    drupal_set_message(t('BLS for reference is wrong.'), 'error');
+    \Drupal::messenger()->addError(t('BLS for reference is wrong.'));
     return;
   }
   $data = explode(':', $bls);
@@ -1425,7 +1630,16 @@ function bible_refverse($bls = NULL, $bibles_ = NULL) {
     _bible_get_blslink2($bibles_, $bls),
     _bible_get_verse_content($bls),
   );
-  $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('table', array('header' => $header, 'rows' => $rows));
+
 
   $output .= '<hr/>' . t('Reference Verses:') . '<br/>';
   $rows = array();
@@ -1441,7 +1655,16 @@ function bible_refverse($bls = NULL, $bibles_ = NULL) {
       );
     }
   }
-  $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// $output .= theme('table', array('header' => $header, 'rows' => $rows));
+
   return $output;
 }
 
@@ -1449,21 +1672,21 @@ function bible_refverse($bls = NULL, $bibles_ = NULL) {
  * Implements hook_filter_format_insert().
  */
 function bible_filter_format_insert($format) {
-  drupal_set_message(t('BLS filter inserted.'));
+  \Drupal::messenger()->addMessage(t('BLS filter inserted.'));
 }
 
 /**
  * Implements hook_filter_format_update().
  */
 function bible_filter_format_update($format) {
-  drupal_set_message(t('BLS filter updated.'));
+  \Drupal::messenger()->addMessage(t('BLS filter updated.'));
 }
 
 /**
  * Implements hook_filter_format_disable().
  */
 function bible_filter_format_disable($format) {
-  drupal_set_message(t('BLS filter disabled.'));
+  \Drupal::messenger()->addMessage(t('BLS filter disabled.'));
 }
 
 /**
@@ -1548,10 +1771,14 @@ function _bible_blsdivhtml($book, $chap, $verse, $para, $func, $tail) {
     $html = '<span class="bls" id="' . $idname . '"';
     $html .= '>' . $bls;
     $html .= '</span>';
-    $blspopupstyle = variable_get('bible_bls_popup_style', BIBLE_BLS_POPUP_STYLE);
+    // @FIXME
+// Could not extract the default value because it is either indeterminate, or
+// not scalar. You'll need to provide a default value in
+// config/install/bible.settings.yml and config/schema/bible.schema.yml.
+$blspopupstyle = \Drupal::config('bible.settings')->get('bible_bls_popup_style');
     if ($blspopupstyle === '') {
       $blspopupstyle = BIBLE_BLS_POPUP_STYLE;
-      variable_set('bible_bls_popup_style', $blspopupstyle);
+      \Drupal::configFactory()->getEditable('bible.settings')->set('bible_bls_popup_style', $blspopupstyle)->save();
     }
 
     $html .= '<span class="popup" id="popup-' . $idname . '" style="position:absolute;';
@@ -1559,7 +1786,7 @@ function _bible_blsdivhtml($book, $chap, $verse, $para, $func, $tail) {
     $pattern_regex = '/(\[\d{1,3}\])/';
     $replacement_regex = '<font color="green">\1</font>';
     $html .= '>' . preg_replace($pattern_regex, $replacement_regex, _bible_get_verse_content2($book . ':' . $chap . ':' . $verse, $bid));
-    if (variable_get('bible_bls_popup_morelink', '0') == 1) {
+    if (\Drupal::config('bible.settings')->get('bible_bls_popup_morelink') == 1) {
       $morelink = _bible_morelink($bid, $book, $chap, $verse);
       $html .= '<br /><a href="' . $morelink . '">' . t('See All...') . '</a>';
     }
@@ -1591,15 +1818,15 @@ function _bible_blsdivhtml($book, $chap, $verse, $para, $func, $tail) {
 
 // Common functions.
 function _bible_get_bible_count() {
-  return db_query('SELECT COUNT(bid) FROM {bible_list}')
+  return \Drupal::database()->query('SELECT COUNT(bid) FROM {bible_list}')
     ->fetchField();
 }
 
 function _bible_get_bible_list($showlang = 0) {
   $biblelist = array();
-  $query = db_select('bible_list', 'bl')
+  $query = \Drupal::database()->select('bible_list', 'bl')
     ->fields('bl');
-  switch (variable_get('bible_config_biblelistorder', 0)) {
+  switch (\Drupal::config('bible.settings')->get('bible_config_biblelistorder')) {
     case 1:
       $query->orderBy('bname');
     break;
@@ -1613,7 +1840,7 @@ function _bible_get_bible_list($showlang = 0) {
 
 function _bible_get_bible($bid) {
   $bid = _bible_get_bible_id_number($bid);
-  return db_select('bible_list', 'bl')
+  return \Drupal::database()->select('bible_list', 'bl')
     ->fields('bl')
     ->condition('bid', $bid)
     ->execute()
@@ -1621,7 +1848,7 @@ function _bible_get_bible($bid) {
 }
 
 function _bible_get_bible2($bsn, $lang) {
-  return db_select('bible_list', 'bl')
+  return \Drupal::database()->select('bible_list', 'bl')
     ->fields('bl')
     ->condition('bsn', $bsn)
     ->condition('lang', $lang)
@@ -1640,7 +1867,7 @@ function _bible_get_bible_bsn($bid) {
 }
 
 function _bible_get_bible_id($bsn) {
-  $bb = db_select('bible_list', 'bl')
+  $bb = \Drupal::database()->select('bible_list', 'bl')
     ->fields('bl')
     ->condition('bsn', $bsn)
     ->execute()
@@ -1659,7 +1886,7 @@ function _bible_get_bible_id_number($bid) {
 
 function _bible_get_chapter_name($bid, $book) {
   $bid = _bible_get_bible_id_number($bid);
-  $book = db_select('bible_book_name', 'bbn')
+  $book = \Drupal::database()->select('bible_book_name', 'bbn')
     ->fields('bbn')
     ->condition('bid', $bid)
     ->condition('book', $book)
@@ -1670,7 +1897,7 @@ function _bible_get_chapter_name($bid, $book) {
 
 function _bible_get_chapter_sname($bid, $book) {
   $bid = _bible_get_bible_id_number($bid);
-  $book = db_select('bible_book_name', 'bbn')
+  $book = \Drupal::database()->select('bible_book_name', 'bbn')
     ->fields('bbn')
     ->condition('bid', $bid)
     ->condition('book', $book)
@@ -1680,7 +1907,7 @@ function _bible_get_chapter_sname($bid, $book) {
 }
 
 function _bible_get_sn_name($snid) {
-  $sn = db_select('bible_sn_list', 'bsnl')
+  $sn = \Drupal::database()->select('bible_sn_list', 'bsnl')
     ->fields('bsnl')
     ->condition('snid', $snid)
     ->execute()
@@ -1742,7 +1969,7 @@ function _bible_get_from_book_alias($book) {
 function _bible_get_chapter($bid, $book, $chapter) {
   // Check variables.
   if ($bid !== '' && $book !== '' && $chapter !== '') {
-    $queryResult = db_query('SELECT b.vsid, b.bid, b.book, b.chapter, b.context ' .
+    $queryResult = \Drupal::database()->query('SELECT b.vsid, b.bid, b.book, b.chapter, b.context ' .
       'FROM {bible_context} b ' .
       'WHERE b.bid = :bid AND b.book = :book AND b.chapter = :chapter AND linemark = :linemark ' .
       'ORDER BY b.vsid', array(
@@ -1761,12 +1988,12 @@ function _bible_get_chapter($bid, $book, $chapter) {
 }
 
 function _bible_get_userprofile($item, $data) {
-  global $user;
+  $user = \Drupal::currentUser();
   return _bible_get_userprofile2($user->uid, $item, $data);
 }
 
 function _bible_get_userprofile2($uid, $item, $data) {
-  $query = db_select('bible_userprofile', 'bup')
+  $query = \Drupal::database()->select('bible_userprofile', 'bup')
     ->fields('bup')
     ->condition('uid', $uid)
     ->condition('item', $item);
@@ -1803,30 +2030,43 @@ function _bible_get_select_bid() {
   $biblelist = _bible_get_bible_list();
   if ($biblelist !== NULL) {
     // BibleLang_SystemLocale.
-    global $language;
+    $language = \Drupal::languageManager()->getCurrentLanguage();
     foreach ($biblelist as $bid => $bb) {
-      if (variable_get('bibledata_language_' . $bid, '*') == $language->language) {
-        return $bid;
-      }
+      // @FIXME
+// // @FIXME
+// // The correct configuration object could not be determined. You'll need to
+// // rewrite this call manually.
+// if (variable_get('bibledata_language_' . $bid, '*') == $language->language) {
+//         return $bid;
+//       }
+
     }
     // BibleLang_Browser.
     $userbrowserlang = _bible_get_user_browser_lang();
     foreach ($biblelist as $bid => $bb) {
-      if (variable_get('bibledata_language_' . $bid, '*') == $userbrowserlang) {
-        return $bid;
-      }
+      // @FIXME
+// // @FIXME
+// // The correct configuration object could not be determined. You'll need to
+// // rewrite this call manually.
+// if (variable_get('bibledata_language_' . $bid, '*') == $userbrowserlang) {
+//         return $bid;
+//       }
+
     }
   }
   else {
-    drupal_set_message(t("You haven't imported any bibles to your site."), 'error');
-    if (user_access('administer bible')) {
-      drupal_set_message(t('Please import bibles from <a href="!link">here</a>.', array(
-        '!link' => url('admin/config/bible/webimport'),
-      )));
+    \Drupal::messenger()->addError(t("You haven't imported any bibles to your site."));
+    if (\Drupal::currentUser()->hasPermission('administer bible')) {
+      // @FIXME
+// url() expects a route name or an external URI.
+// drupal_set_message(t('Please import bibles from <a href="!link">here</a>.', array(
+//         '!link' => url('admin/config/bible/webimport'),
+//       )));
+
     }
   }
   // System Default.
-  return variable_get('bible_select', 1);
+  return \Drupal::config('bible.settings')->get('bible_select');
 }
 
 function _bible_get_verse_content($bls) {
@@ -1836,7 +2076,7 @@ function _bible_get_verse_content($bls) {
 
 function _bible_get_verse_content2($bls, $bid, $single_pattern = '@c', $multi_pattern = " <span class='verse'>[@v]</span> @c\n") {
   $data = explode(':', $bls);
-  $query = db_select('bible_context', 'bc')
+  $query = \Drupal::database()->select('bible_context', 'bc')
     ->fields('bc')
     ->condition('bid', $bid)
     ->condition('book', $data[0])
@@ -1867,7 +2107,7 @@ function _bible_get_verse_count($bls, $bid) {
   if (count($data) != 3) {
     return 0;
   }
-  $query = db_select('bible_context', 'bc')
+  $query = \Drupal::database()->select('bible_context', 'bc')
     ->condition('bid', $bid)
     ->condition('book', $data[0])
     ->condition('chapter', $data[1])
@@ -1894,12 +2134,11 @@ function _bible_get_prevnextchap($bls, $bid = -1) {
     $bid = _bible_get_bible_id_number($bid);
   }
   $data = explode(':', $bls);
-  $queryResult = db_query('SELECT * FROM {bible_book_name} ' .
+  $queryResult = \Drupal::database()->query('SELECT * FROM {bible_book_name} ' .
     'WHERE bid = :bid AND book = :book', array(
       ':bid' => $bid,
       ':book' => $data[0],
-    )
-  );
+    ));
   $book = $queryResult->fetch();
   if ($book === NULL) {
     return '';
@@ -1915,7 +2154,7 @@ function _bible_get_prevnextchap($bls, $bid = -1) {
     else {
       $bkid = ($book->bkid) -1;
     }
-    $prevbk = db_query('SELECT * FROM {bible_book_name} ' .
+    $prevbk = \Drupal::database()->query('SELECT * FROM {bible_book_name} ' .
       'WHERE bid = :bid AND bkid = :bkid', array(
         ':bid' => $bid,
         ':bkid' => $bkid,
@@ -1933,7 +2172,7 @@ function _bible_get_prevnextchap($bls, $bid = -1) {
     else {
       $bkid = ($book->bkid) + 1;
     }
-    $nextbk = db_query('SELECT * FROM {bible_book_name} ' .
+    $nextbk = \Drupal::database()->query('SELECT * FROM {bible_book_name} ' .
       'WHERE bid = :bid AND bkid = :bkid', array(
         ':bid' => $bid,
         ':bkid' => $bkid,
@@ -1979,22 +2218,20 @@ function _bible_get_random_verse($bid = 1) {
   // Initialize variables.
   $verse_array = '';
   // Determine verse limits based on translation.
-  $queryResults = db_query('SELECT MAX(b.vsid) AS vmax, MIN(b.vsid) AS vmin ' .
+  $queryResults = \Drupal::database()->query('SELECT MAX(b.vsid) AS vmax, MIN(b.vsid) AS vmin ' .
     'FROM {bible_context} b ' .
-    'WHERE b.bid = :bid ORDER BY b.vsid', array(':bid' => $bid)
-  );
+    'WHERE b.bid = :bid ORDER BY b.vsid', array(':bid' => $bid));
   if ($vl = $queryResults->fetch()) {
     $max = $vl->vmax;
     $min = $vl->vmin;
     $rand = rand($min, $max);
     // Grab random verse from db using translation and random verse id.
-    $verseResults = db_query('SELECT b.vsid, b.bid, b.book, b.chapter, b.verse, b.context ' .
+    $verseResults = \Drupal::database()->query('SELECT b.vsid, b.bid, b.book, b.chapter, b.verse, b.context ' .
       'FROM {bible_context} b ' .
       'WHERE b.vsid = :vsid AND b.bid = :bid', array(
         ':vsid' => $rand,
         ':bid' => $bid,
-      )
-    );
+      ));
     if ($vo = $verseResults->fetch()) {
       $verse_array = array(
         'bid' => $vo->bid,
@@ -2010,8 +2247,8 @@ function _bible_get_random_verse($bid = 1) {
 }
 
 function _bible_get_random_myverse($bid = 1, $vset = -1){
-  global $user;
-  $query = db_select('bible_userprofile', 'bup')
+  $user = \Drupal::currentUser();
+  $query = \Drupal::database()->select('bible_userprofile', 'bup')
     ->condition('uid', $user->uid);
   if ($vset >= 0) {
     $vsetitem = ($vset <= 0 ? 'goldenverse' : 'verseset' . $vset);
@@ -2059,13 +2296,13 @@ function _bible_get_bls_versearray($bls, $bid = -1){
 }
 
 function _bible_get_goldenversemask($book, $chapter, $versemask = array()) {
-  global $user;
+  $user = \Drupal::currentUser();
   if ($user->uid > 0) {
     $items = array('vs_goldenverse');
     for ($i = 1; $i < 6; $i++) {
       $items[] = 'vs_verseset' . $i;
     }
-    $verseset = db_select('bible_userprofile', 'bup')
+    $verseset = \Drupal::database()->select('bible_userprofile', 'bup')
       ->fields('bup')
       ->condition('uid', $user->uid)
       ->condition('item', $items, 'IN')
@@ -2107,8 +2344,8 @@ function _bible_get_refversemask($book, $chapter, $versemask = array()) {
 }
 
 function _bible_get_notemask($book, $chapter, $versemask = array()) {
-  global $user;
-  $noteset = db_select('bible_note', 'bn')
+  $user = \Drupal::currentUser();
+  $noteset = \Drupal::database()->select('bible_note', 'bn')
     ->fields('bn')
     ->condition(db_or()
       // 0 means public, 1 means private.
@@ -2129,7 +2366,10 @@ function _bible_get_notemask($book, $chapter, $versemask = array()) {
 }
 
 function _bible_morelink($bid, $book, $chap, $verse) {
-  $morelink = url('bible/' . $bid . '/' . $book . '/' . $chap . '/' . $verse);
+  // @FIXME
+// url() expects a route name or an external URI.
+// $morelink = url('bible/' . $bid . '/' . $book . '/' . $chap . '/' . $verse);
+
   if (strpos($verse, '-')) {
     $vv = explode('-', $verse);
     $morelink .= '#v' . $vv[0];
@@ -2157,7 +2397,7 @@ function _bible_get_blslink2($bid, $bls) {
 
 function _bible_get_bibledata($book, $chapter) {
   global $bibledataxml;
-  if (variable_get('bible_data_active', 1) != 1) {
+  if (\Drupal::config('bible.settings')->get('bible_data_active') != 1) {
     $bibledataxml = '';
     return '';
   }
@@ -2170,11 +2410,19 @@ function _bible_get_bibledata($book, $chapter) {
     }
   }
   $default_url = BIBLE_DATA_DEFAULT_URL . '/getchap/' . $book . ':' . $chapter;
-  $default_url .= '/' . variable_get('bible_data_bdtypeselect', '');
-  if (variable_get('bible_data_langcode', '*') != '*') {
-    $default_url .= '/' . variable_get('bible_data_langcode', '*');
+  $default_url .= '/' . \Drupal::config('bible.settings')->get('bible_data_bdtypeselect');
+  if (\Drupal::config('bible.settings')->get('bible_data_langcode') != '*') {
+    $default_url .= '/' . \Drupal::config('bible.settings')->get('bible_data_langcode');
   }
-  $xml = drupal_http_request($default_url);
+  // @FIXME
+// drupal_http_request() has been replaced by the Guzzle HTTP client, which is bundled
+// with Drupal core.
+// 
+// 
+// @see https://www.drupal.org/node/1862446
+// @see http://docs.guzzlephp.org/en/latest
+// $xml = drupal_http_request($default_url);
+
   $bibledataxml = ($xml->code == 200 ? $xml->data : '');
   $_SESSION['bibledataxml'] = $bibledataxml;
   return $bibledataxml;
@@ -2241,7 +2489,7 @@ function theme_bible_daily_proverb($variables) {
   }
   // Show just the first verse or a random verse.
   else {
-    $query = db_select('bible_context', 'bc')
+    $query = \Drupal::database()->select('bible_context', 'bc')
       ->condition('book', 'PRO')
       ->condition('chapter', $chapter_id)
       ->condition('bid', $bid);
@@ -2262,7 +2510,10 @@ function theme_bible_daily_proverb($variables) {
       }
     }
     $page_content .= theme_box($title, $content);
-    $page_content .= '<div class="bible-more-link">' . l(t('See All...'), 'bible/' . $bid . '/PRO/' . $chapter_id) . '</div>';
+    // @FIXME
+// l() expects a Url object, created from a route name or external URI.
+// $page_content .= '<div class="bible-more-link">' . l(t('See All...'), 'bible/' . $bid . '/PRO/' . $chapter_id) . '</div>';
+
   }
   // Return themed table.
   return $page_content;
@@ -2289,7 +2540,7 @@ function theme_bible_golden_verse($variables) {
   // Show just the first verse.
   $bookname = _bible_get_chapter_name($verse_array['bid'], $verse_array['book']);
   $title = $bookname . ' ' . $verse_array['chapter'] . ':' . $verse_array['verse'];
-  $showchapternumber = variable_get('bible_config_showchapternumber', 0);
+  $showchapternumber = \Drupal::config('bible.settings')->get('bible_config_showchapternumber');
   $replacement_regex = ' <span class="verse">[' . ($showchapternumber ? $verse_array['chapter'] . ':' : '');
   $replacement_regex .= '\1]</span>\2<span class="verse-break"></span>';
   $content = preg_replace(
@@ -2322,5 +2573,14 @@ function theme_bible_quotes($variables) {
 function theme_box($title, $content) {
   $header[] = $title;
   $rows[0][] = $content;
-  return theme('table', array('header' => $header, 'rows' => $rows));
+  // @FIXME
+// theme() has been renamed to _theme() and should NEVER be called directly.
+// Calling _theme() directly can alter the expected output and potentially
+// introduce security issues (see https://www.drupal.org/node/2195739). You
+// should use renderable arrays instead.
+// 
+// 
+// @see https://www.drupal.org/node/2195739
+// return theme('table', array('header' => $header, 'rows' => $rows));
+
 }
