@@ -6,7 +6,7 @@
 namespace Drupal\bible\EventSubscriber;
 
 use Symfony\Component\HttpKernel\KernelEvents;
-use Symfony\Contracts\EventDispatcher\EventSubscriberInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 class BootSubscriber implements EventSubscriberInterface {
 
